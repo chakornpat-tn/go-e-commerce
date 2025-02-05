@@ -1,1 +1,1 @@
-package appInfo
+package appinfo

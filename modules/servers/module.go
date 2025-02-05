@@ -10,9 +10,9 @@ import (
 	"github.com/chakornpat-tn/go-rest-api/modules/users/usersRepositories"
 	"github.com/chakornpat-tn/go-rest-api/modules/users/usersUsecases"
 
-	"github.com/chakornpat-tn/go-rest-api/modules/appInfo/appInfoHandlers"
-	"github.com/chakornpat-tn/go-rest-api/modules/appInfo/appInfoRepositories"
-	"github.com/chakornpat-tn/go-rest-api/modules/appInfo/appInfoUsecases"
+	"github.com/chakornpat-tn/go-rest-api/modules/appinfo/appinfoHandlers"
+	"github.com/chakornpat-tn/go-rest-api/modules/appinfo/appinfoRepositories"
+	"github.com/chakornpat-tn/go-rest-api/modules/appinfo/appinfoUsecases"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -20,6 +20,7 @@ import (
 type IModuleFactory interface {
 	MonitorModule()
 	UsersModule()
+	AppinfoModule()
 }
 
 type moduleFactory struct {
@@ -55,23 +56,23 @@ func (m *moduleFactory) UsersModule() {
 
 	router := m.router.Group("/users")
 
-	router.Post("/signup", handler.SignUpCustomer)
-	router.Post("/signin", handler.SignIn)
-	router.Post("/signout", handler.SignOut)
-	router.Post("/refresh", handler.RefreshPassport)
+	router.Post("/signup", m.mid.ApiKeyAuth(), handler.SignUpCustomer)
+	router.Post("/signin", m.mid.ApiKeyAuth(), handler.SignIn)
+	router.Post("/signout", m.mid.ApiKeyAuth(), handler.SignOut)
+	router.Post("/signup-admin", m.mid.JwtAuth(), m.mid.Authorize(2), handler.SignOut)
+	router.Post("/refresh", m.mid.ApiKeyAuth(), handler.RefreshPassport)
 
 	router.Get("/admin/secret", m.mid.JwtAuth(), m.mid.Authorize(2), handler.GenerateAdminToken)
 	router.Get("/:user_Id", m.mid.JwtAuth(), m.mid.ParamsCheck(), handler.GetUserProfile)
 }
 
-func (m *moduleFactory) AppInfoModule() {
-	repository := appInfoRepositories.NewAppInfoRepository(m.server.db)
-	useCase := appInfoUsecases.NewAppInfoUsecase(m.server.cfg, repository)
-	handler := appInfoHandlers.NewAppInfoHandler(m.server.cfg, useCase)
+func (m *moduleFactory) AppinfoModule() {
+	repository := appinfoRepositories.NewappinfoRepository(m.server.db)
+	useCase := appinfoUsecases.NewappinfoUsecase(m.server.cfg, repository)
+	handler := appinfoHandlers.NewappinfoHandler(m.server.cfg, useCase)
 
-	router := m.router.Group("/appInfo")
+	router := m.router.Group("/appinfo")
 
-	_ = router
-	_ = handler
+	router.Get("/apikey", m.mid.JwtAuth(), m.mid.Authorize(2), handler.GenerateApiKey)
 
 }

@@ -1,21 +1,21 @@
-package appInfoUsecases
+package appinfoUsecases
 
 import (
 	"github.com/chakornpat-tn/go-rest-api/config"
-	"github.com/chakornpat-tn/go-rest-api/modules/appInfo/appInfoRepositories"
+	"github.com/chakornpat-tn/go-rest-api/modules/appinfo/appinfoRepositories"
 )
 
-type IAppInfoUsecases interface {
+type IAppinfoUsecases interface {
 }
 
-type appInfoUsecase struct {
+type appinfoUsecase struct {
 	cfg                 config.IConfig
-	appInfoRepositories appInfoRepositories.IAppInfoRepositories
+	appinfoRepositories appinfoRepositories.IAppinfoRepositories
 }
 
-func NewAppInfoUsecase(cfg config.IConfig, appInfoRepositories appInfoRepositories.IAppInfoRepositories) IAppInfoUsecases {
-	return &appInfoUsecase{
+func NewappinfoUsecase(cfg config.IConfig, appinfoRepositories appinfoRepositories.IAppinfoRepositories) IAppinfoUsecases {
+	return &appinfoUsecase{
 		cfg:                 cfg,
-		appInfoRepositories: appInfoRepositories,
+		appinfoRepositories: appinfoRepositories,
 	}
 }

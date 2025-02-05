@@ -1,18 +1,18 @@
-package appInfoRepositories
+package appinfoRepositories
 
 import (
 	"github.com/jmoiron/sqlx"
 )
 
-type IAppInfoRepositories interface {
+type IAppinfoRepositories interface {
 }
 
-type appInfoRepository struct {
+type appinfoRepository struct {
 	db *sqlx.DB
 }
 
-func NewAppInfoRepository(db *sqlx.DB) IAppInfoRepositories {
-	return &appInfoRepository{
+func NewappinfoRepository(db *sqlx.DB) IAppinfoRepositories {
+	return &appinfoRepository{
 		db: db,
 	}
 }
