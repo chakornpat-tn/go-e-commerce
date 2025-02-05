@@ -5,9 +5,15 @@ import (
 	"github.com/chakornpat-tn/go-rest-api/modules/middlewares/middlewaresRepositories"
 	"github.com/chakornpat-tn/go-rest-api/modules/middlewares/middlewaresUsecases"
 	monitorHandlers "github.com/chakornpat-tn/go-rest-api/modules/monitor/monitorHandler"
+
 	"github.com/chakornpat-tn/go-rest-api/modules/users/usersHandlers"
 	"github.com/chakornpat-tn/go-rest-api/modules/users/usersRepositories"
 	"github.com/chakornpat-tn/go-rest-api/modules/users/usersUsecases"
+
+	"github.com/chakornpat-tn/go-rest-api/modules/appInfo/appInfoHandlers"
+	"github.com/chakornpat-tn/go-rest-api/modules/appInfo/appInfoRepositories"
+	"github.com/chakornpat-tn/go-rest-api/modules/appInfo/appInfoUsecases"
+
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -56,4 +62,16 @@ func (m *moduleFactory) UsersModule() {
 
 	router.Get("/admin/secret", m.mid.JwtAuth(), m.mid.Authorize(2), handler.GenerateAdminToken)
 	router.Get("/:user_Id", m.mid.JwtAuth(), m.mid.ParamsCheck(), handler.GetUserProfile)
+}
+
+func (m *moduleFactory) AppInfoModule() {
+	repository := appInfoRepositories.NewAppInfoRepository(m.server.db)
+	useCase := appInfoUsecases.NewAppInfoUsecase(m.server.cfg, repository)
+	handler := appInfoHandlers.NewAppInfoHandler(m.server.cfg, useCase)
+
+	router := m.router.Group("/appInfo")
+
+	_ = router
+	_ = handler
+
 }
