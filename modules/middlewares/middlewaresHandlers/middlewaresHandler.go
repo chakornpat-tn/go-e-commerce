@@ -20,6 +20,7 @@ const (
 	jwtAuthErr     middlewareHandlerErrCode = "router-002"
 	paramsErr      middlewareHandlerErrCode = "router-003"
 	authorizeErr   middlewareHandlerErrCode = "router-004"
+	apiKeyErr      middlewareHandlerErrCode = "router-005"
 )
 
 type IMiddlewaresHandler interface {
@@ -29,6 +30,7 @@ type IMiddlewaresHandler interface {
 	JwtAuth() fiber.Handler
 	ParamsCheck() fiber.Handler
 	Authorize(expectRoleId ...int) fiber.Handler
+	ApiKeyAuth() fiber.Handler
 }
 
 type middlewaresHandler struct {
@@ -134,5 +136,16 @@ func (h *middlewaresHandler) Authorize(expectRoleId ...int) fiber.Handler {
 			string(authorizeErr),
 			"no permission to access",
 		).Res()
+	}
+}
+
+func (h *middlewaresHandler) ApiKeyAuth() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		key := c.Get("X-API-KEY")
+		if _, err := auth.ParseApiKey(h.cfg.JWT(), key); err != nil {
+			return entities.NewResponse(c).Error(fiber.ErrUnauthorized.Code, string(apiKeyErr), "invalid api key").Res()
+		}
+
+		return c.Next()
 	}
 }

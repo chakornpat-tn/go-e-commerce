@@ -28,12 +28,20 @@ type IAdminAuth interface {
 	SignToken() string
 }
 
+type IApiKey interface {
+	SignToken() string
+}
+
 type auth struct {
 	mapClaims *authMapClaims
 	cfg       config.IJwtConfig
 }
 
 type adminAuth struct {
+	*auth
+}
+
+type apiKey struct {
 	*auth
 }
 
@@ -58,6 +66,8 @@ func NewAuth(tokenType TokenType, cfg config.IJwtConfig, clams *users.UserClaims
 		return newRefreshToken(cfg, clams), nil
 	case Admin:
 		return newAdminToken(cfg), nil
+	case ApiKey:
+		return newApiToken(cfg), nil
 	default:
 		return nil, fmt.Errorf("unknown token type")
 	}
@@ -81,6 +91,42 @@ func (a *adminAuth) SignToken() string {
 	tokenSS, _ := token.SignedString(a.cfg.AdminKey())
 
 	return tokenSS
+}
+
+func (a *apiKey) SignToken() string {
+	token := jwt.NewWithClaims(
+		jwt.SigningMethodHS256,
+		a.mapClaims,
+	)
+	tokenSS, _ := token.SignedString(a.cfg.APIKey())
+
+	return tokenSS
+}
+
+func ParseApiKey(cfg config.IJwtConfig, tokenString string) (*authMapClaims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &authMapClaims{}, func(t *jwt.Token) (interface{}, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("signing method is invalid")
+		}
+		return cfg.APIKey(), nil
+	})
+
+	if err != nil {
+		if errors.Is(err, jwt.ErrTokenMalformed) {
+			return nil, fmt.Errorf("token format is invalid")
+		} else if errors.Is(err, jwt.ErrTokenExpired) {
+			return nil, fmt.Errorf("token has expired")
+		} else {
+			return nil, fmt.Errorf("parse token error: %w", err)
+		}
+	}
+
+	if claims, ok := token.Claims.(*authMapClaims); ok {
+		return claims, nil
+	} else {
+		return nil, fmt.Errorf("claims type is invalid")
+	}
+
 }
 func ParseAdmin(cfg config.IJwtConfig, tokenString string) (*authMapClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &authMapClaims{}, func(t *jwt.Token) (interface{}, error) {
@@ -195,6 +241,24 @@ func newAdminToken(cfg config.IJwtConfig) IAuth {
 					Issuer:    "go-rest-api",
 					Subject:   "admin-token",
 					ExpiresAt: jwtTimeDurationCal(300),
+					NotBefore: jwt.NewNumericDate(time.Now()),
+					IssuedAt:  jwt.NewNumericDate(time.Now()),
+				},
+			},
+		},
+	}
+}
+
+func newApiToken(cfg config.IJwtConfig) IAuth {
+	return &apiKey{
+		&auth{
+			cfg: cfg,
+			mapClaims: &authMapClaims{
+				Claims: nil,
+				RegisteredClaims: jwt.RegisteredClaims{
+					Issuer:    "go-rest-api",
+					Subject:   "api-key",
+					ExpiresAt: jwt.NewNumericDate(time.Now().AddDate(2, 0, 0)),
 					NotBefore: jwt.NewNumericDate(time.Now()),
 					IssuedAt:  jwt.NewNumericDate(time.Now()),
 				},
