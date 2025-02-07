@@ -1,6 +1,8 @@
 package servers
 
 import (
+	"github.com/chakornpat-tn/go-rest-api/modules/files/filesHandlers"
+	"github.com/chakornpat-tn/go-rest-api/modules/files/filesUsecases"
 	"github.com/chakornpat-tn/go-rest-api/modules/middlewares/middlewaresHandlers"
 	"github.com/chakornpat-tn/go-rest-api/modules/middlewares/middlewaresRepositories"
 	"github.com/chakornpat-tn/go-rest-api/modules/middlewares/middlewaresUsecases"
@@ -21,6 +23,7 @@ type IModuleFactory interface {
 	MonitorModule()
 	UsersModule()
 	AppinfoModule()
+	FilesModule()
 }
 
 type moduleFactory struct {
@@ -79,4 +82,16 @@ func (m *moduleFactory) AppinfoModule() {
 	router.Get("/categories", m.mid.ApiKeyAuth(), handler.FindCategory)
 	router.Delete("/categories", m.mid.ApiKeyAuth(), handler.FindCategory)
 
+}
+
+func (m *moduleFactory) FilesModule() {
+	handler := filesHandlers.NewFilesHandler(
+		m.server.cfg,
+		filesUsecases.NewFilesUsecase(m.server.cfg),
+	)
+
+	router := m.router.Group("/files")
+
+	router.Post("/upload", m.mid.JwtAuth(), m.mid.Authorize(2), handler.UploadFiles)
+	router.Delete("/delete", m.mid.JwtAuth(), m.mid.Authorize(2), handler.DeleteFiles)
 }
