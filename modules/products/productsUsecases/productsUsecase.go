@@ -1,12 +1,16 @@
 package productsUsecases
 
 import (
+	"math"
+
+	"github.com/chakornpat-tn/go-rest-api/modules/entities"
 	"github.com/chakornpat-tn/go-rest-api/modules/products"
 	"github.com/chakornpat-tn/go-rest-api/modules/products/productsRepositories"
 )
 
 type IProductsUsecase interface {
 	FindProductById(productId string) (*products.Product, error)
+	FindProducts(req *products.ProductFilter) *entities.PaginateRes
 }
 
 type productUsecase struct {
@@ -25,4 +29,16 @@ func (u *productUsecase) FindProductById(productId string) (*products.Product, e
 		return nil, err
 	}
 	return product, nil
+}
+
+func (u *productUsecase) FindProducts(req *products.ProductFilter) *entities.PaginateRes {
+	products, count := u.productsRepositories.FindProducts(req)
+
+	return &entities.PaginateRes{
+		Data:      products,
+		Page:      req.Page,
+		Limit:     req.Limit,
+		TotalData: count,
+		TotalPage: int(math.Ceil(float64(count) / float64(req.Limit))),
+	}
 }

@@ -52,3 +52,11 @@ func (r *Response) Res() error {
 	}
 	return r.Context.Status(fiber.StatusOK).JSON(r.Data)
 }
+
+type PaginateRes struct {
+	Data      any `json:"data"`
+	Page      int `json:"page"`
+	Limit     int `json:"limit"`
+	TotalPage int `json:"total_page"`
+	TotalData int `json:"total_data"`
+}

@@ -8,11 +8,13 @@ import (
 	"github.com/chakornpat-tn/go-rest-api/modules/entities"
 	"github.com/chakornpat-tn/go-rest-api/modules/files/filesUsecases"
 	"github.com/chakornpat-tn/go-rest-api/modules/products"
+	productsPatterns "github.com/chakornpat-tn/go-rest-api/modules/products/productPatterns"
 	"github.com/jmoiron/sqlx"
 )
 
 type IProductsRepository interface {
 	FindProductById(productId string) (*products.Product, error)
+	FindProducts(filter *products.ProductFilter) ([]*products.Product, int)
 }
 
 type productRepository struct {
@@ -90,4 +92,13 @@ func (r *productRepository) FindProductById(productId string) (*products.Product
 	}
 
 	return product, nil
+}
+
+func (r *productRepository) FindProducts(req *products.ProductFilter) ([]*products.Product, int) {
+	builder := productsPatterns.FindProductBuilder(r.db, req)
+	engineer := productsPatterns.FindProductEngineer(builder)
+
+	result := engineer.FindProduct().Result()
+	count := engineer.CountProduct().Count()
+	return result, count
 }
