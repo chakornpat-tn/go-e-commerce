@@ -11,6 +11,7 @@ import (
 type IProductsUsecase interface {
 	FindProductById(productId string) (*products.Product, error)
 	FindProducts(req *products.ProductFilter) *entities.PaginateRes
+	AddProduct(req *products.Product) (*products.Product, error)
 }
 
 type productUsecase struct {
@@ -41,4 +42,13 @@ func (u *productUsecase) FindProducts(req *products.ProductFilter) *entities.Pag
 		TotalData: count,
 		TotalPage: int(math.Ceil(float64(count) / float64(req.Limit))),
 	}
+}
+
+func (u *productUsecase) AddProduct(req *products.Product) (*products.Product, error) {
+	product, err := u.productsRepositories.InsertProduct(req)
+	if err != nil {
+		return nil, err
+	}
+
+	return product, nil
 }

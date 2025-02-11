@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/chakornpat-tn/go-rest-api/config"
+	"github.com/chakornpat-tn/go-rest-api/modules/appinfo"
 	"github.com/chakornpat-tn/go-rest-api/modules/entities"
 	"github.com/chakornpat-tn/go-rest-api/modules/files/filesUsecases"
 	"github.com/chakornpat-tn/go-rest-api/modules/products"
@@ -16,11 +17,13 @@ type productsHandlerErrCode string
 const (
 	FindProductByIdErr productsHandlerErrCode = "products-001"
 	FindProductsErr    productsHandlerErrCode = "products-002"
+	InsertProductsErr  productsHandlerErrCode = "products-003"
 )
 
 type IProductsHandler interface {
 	FindProductById(c *fiber.Ctx) error
 	FindProducts(c *fiber.Ctx) error
+	AddProduct(c *fiber.Ctx) error
 }
 
 type productsHandler struct {
@@ -76,4 +79,26 @@ func (h *productsHandler) FindProducts(c *fiber.Ctx) error {
 	res := h.productsUsecase.FindProducts(req)
 
 	return entities.NewResponse(c).Success(fiber.StatusOK, res).Res()
+}
+
+func (h *productsHandler) AddProduct(c *fiber.Ctx) error {
+	req := &products.Product{
+		Category: new(appinfo.Category),
+		Images:   make([]*entities.Image, 0),
+	}
+
+	if err := c.BodyParser(req); err != nil {
+		return entities.NewResponse(c).Error(fiber.ErrBadRequest.Code, string(InsertProductsErr), err.Error()).Res()
+	}
+
+	if req.Category.Id <= 0 {
+		return entities.NewResponse(c).Error(fiber.ErrBadRequest.Code, string(InsertProductsErr), "category id is invalid").Res()
+	}
+
+	product, err := h.productsUsecase.AddProduct(req)
+	if err != nil {
+		return entities.NewResponse(c).Error(fiber.ErrInternalServerError.Code, string(InsertProductsErr), err.Error()).Res()
+	}
+
+	return entities.NewResponse(c).Success(fiber.StatusOK, product).Res()
 }
