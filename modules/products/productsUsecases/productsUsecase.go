@@ -12,6 +12,7 @@ type IProductsUsecase interface {
 	FindProductById(productId string) (*products.Product, error)
 	FindProducts(req *products.ProductFilter) *entities.PaginateRes
 	AddProduct(req *products.Product) (*products.Product, error)
+	UpdateProduct(req *products.Product) (*products.Product, error)
 }
 
 type productUsecase struct {
@@ -50,5 +51,13 @@ func (u *productUsecase) AddProduct(req *products.Product) (*products.Product, e
 		return nil, err
 	}
 
+	return product, nil
+}
+
+func (u *productUsecase) UpdateProduct(req *products.Product) (*products.Product, error) {
+	product, err := u.productsRepositories.UpdateProduct(req)
+	if err != nil {
+		return nil, err
+	}
 	return product, nil
 }
