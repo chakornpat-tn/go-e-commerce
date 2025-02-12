@@ -16,6 +16,10 @@ import (
 	"github.com/chakornpat-tn/go-rest-api/modules/appinfo/appinfoRepositories"
 	"github.com/chakornpat-tn/go-rest-api/modules/appinfo/appinfoUsecases"
 
+	"github.com/chakornpat-tn/go-rest-api/modules/products/productsHandlers"
+	"github.com/chakornpat-tn/go-rest-api/modules/products/productsRepositories"
+	"github.com/chakornpat-tn/go-rest-api/modules/products/productsUsecases"
+
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -24,6 +28,7 @@ type IModuleFactory interface {
 	UsersModule()
 	AppinfoModule()
 	FilesModule()
+	ProductsModule()
 }
 
 type moduleFactory struct {
@@ -94,4 +99,20 @@ func (m *moduleFactory) FilesModule() {
 
 	router.Post("/upload", m.mid.JwtAuth(), m.mid.Authorize(2), handler.UploadFiles)
 	router.Delete("/delete", m.mid.JwtAuth(), m.mid.Authorize(2), handler.DeleteFiles)
+}
+
+func (m *moduleFactory) ProductsModule() {
+	filesUsecase := filesUsecases.NewFilesUsecase(m.server.cfg)
+
+	repository := productsRepositories.NewProductsRepository(m.server.cfg, m.server.db, filesUsecase)
+	useCase := productsUsecases.NewProductsUsecase(repository)
+	handler := productsHandlers.NewProductsHandler(m.server.cfg, useCase, filesUsecase)
+
+	router := m.router.Group("/products")
+
+	router.Get("/", m.mid.ApiKeyAuth(), handler.FindProducts)
+	router.Get("/:product_id", m.mid.ApiKeyAuth(), handler.FindProductById)
+	router.Delete("/:product_id", m.mid.JwtAuth(), m.mid.Authorize(2), handler.DeleteProduct)
+	router.Patch("/:product_id", m.mid.JwtAuth(), m.mid.Authorize(2), handler.UpdateProduct)
+	router.Post("/", m.mid.JwtAuth(), m.mid.Authorize(2), handler.AddProduct)
 }
