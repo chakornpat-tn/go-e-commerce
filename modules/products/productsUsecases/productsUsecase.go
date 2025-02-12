@@ -13,6 +13,7 @@ type IProductsUsecase interface {
 	FindProducts(req *products.ProductFilter) *entities.PaginateRes
 	AddProduct(req *products.Product) (*products.Product, error)
 	UpdateProduct(req *products.Product) (*products.Product, error)
+	DeleteProduct(productId string) error
 }
 
 type productUsecase struct {
@@ -60,4 +61,12 @@ func (u *productUsecase) UpdateProduct(req *products.Product) (*products.Product
 		return nil, err
 	}
 	return product, nil
+}
+
+func (u *productUsecase) DeleteProduct(productId string) error {
+	err := u.productsRepositories.DeleteProduct(productId)
+	if err != nil {
+		return err
+	}
+	return nil
 }

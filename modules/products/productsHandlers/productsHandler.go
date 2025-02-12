@@ -1,11 +1,13 @@
 package productsHandlers
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/chakornpat-tn/go-rest-api/config"
 	"github.com/chakornpat-tn/go-rest-api/modules/appinfo"
 	"github.com/chakornpat-tn/go-rest-api/modules/entities"
+	"github.com/chakornpat-tn/go-rest-api/modules/files"
 	"github.com/chakornpat-tn/go-rest-api/modules/files/filesUsecases"
 	"github.com/chakornpat-tn/go-rest-api/modules/products"
 	"github.com/chakornpat-tn/go-rest-api/modules/products/productsUsecases"
@@ -19,6 +21,7 @@ const (
 	FindProductsErr    productsHandlerErrCode = "products-002"
 	InsertProductsErr  productsHandlerErrCode = "products-003"
 	updateProductsErr  productsHandlerErrCode = "products-004"
+	deleteProductsErr  productsHandlerErrCode = "products-005"
 )
 
 type IProductsHandler interface {
@@ -26,6 +29,7 @@ type IProductsHandler interface {
 	FindProducts(c *fiber.Ctx) error
 	AddProduct(c *fiber.Ctx) error
 	UpdateProduct(c *fiber.Ctx) error
+	DeleteProduct(c *fiber.Ctx) error
 }
 
 type productsHandler struct {
@@ -124,4 +128,30 @@ func (h *productsHandler) UpdateProduct(c *fiber.Ctx) error {
 	}
 
 	return entities.NewResponse(c).Success(fiber.StatusOK, product).Res()
+}
+
+func (h *productsHandler) DeleteProduct(c *fiber.Ctx) error {
+	productId := strings.Trim(c.Params("product_id"), " ")
+
+	product, err := h.productsUsecase.FindProductById(productId)
+	if err != nil {
+		return entities.NewResponse(c).Error(fiber.ErrInternalServerError.Code, string(FindProductByIdErr), err.Error()).Res()
+	}
+
+	deleteFileReq := make([]*files.DeleteFileReq, 0)
+	for _, image := range product.Images {
+		deleteFileReq = append(deleteFileReq, &files.DeleteFileReq{
+			Destination: fmt.Sprintf("images/test/%s", image.FileName),
+		})
+	}
+
+	if err := h.filesUsecase.DeleteFileOnGCP(deleteFileReq); err != nil {
+		return entities.NewResponse(c).Error(fiber.ErrInternalServerError.Code, string(deleteProductsErr), err.Error()).Res()
+	}
+
+	if err := h.productsUsecase.DeleteProduct(productId); err != nil {
+		return entities.NewResponse(c).Error(fiber.ErrInternalServerError.Code, string(deleteProductsErr), err.Error()).Res()
+	}
+
+	return entities.NewResponse(c).Success(fiber.StatusOK, nil).Res()
 }

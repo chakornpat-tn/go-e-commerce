@@ -112,6 +112,7 @@ func (m *moduleFactory) ProductsModule() {
 
 	router.Get("/", m.mid.ApiKeyAuth(), handler.FindProducts)
 	router.Get("/:product_id", m.mid.ApiKeyAuth(), handler.FindProductById)
+	router.Delete("/:product_id", m.mid.JwtAuth(), m.mid.Authorize(2), handler.DeleteProduct)
 	router.Patch("/:product_id", m.mid.JwtAuth(), m.mid.Authorize(2), handler.UpdateProduct)
 	router.Post("/", m.mid.JwtAuth(), m.mid.Authorize(2), handler.AddProduct)
 }
