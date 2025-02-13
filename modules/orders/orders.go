@@ -1,7 +1,18 @@
 package orders
 
-import "github.com/chakornpat-tn/go-rest-api/modules/products"
+import (
+	"github.com/chakornpat-tn/go-rest-api/modules/entities"
+	"github.com/chakornpat-tn/go-rest-api/modules/products"
+)
 
+type OrderFilter struct {
+	Search    string `query:"search"`
+	Status    string `query:"status"`
+	StartDate string `query:"start_date"`
+	EndDate   string `query:"end_date"`
+	*entities.PaginationReq
+	*entities.SortReq
+}
 type Order struct {
 	Id           string           `db:"id" json:"id"`
 	UserId       string           `db:"user_id" json:"user_id"`
