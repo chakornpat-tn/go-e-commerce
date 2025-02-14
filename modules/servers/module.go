@@ -7,7 +7,6 @@ import (
 	"github.com/chakornpat-tn/go-rest-api/modules/middlewares/middlewaresRepositories"
 	"github.com/chakornpat-tn/go-rest-api/modules/middlewares/middlewaresUsecases"
 	monitorHandlers "github.com/chakornpat-tn/go-rest-api/modules/monitor/monitorHandler"
-
 	"github.com/chakornpat-tn/go-rest-api/modules/users/usersHandlers"
 	"github.com/chakornpat-tn/go-rest-api/modules/users/usersRepositories"
 	"github.com/chakornpat-tn/go-rest-api/modules/users/usersUsecases"
@@ -20,6 +19,10 @@ import (
 	"github.com/chakornpat-tn/go-rest-api/modules/products/productsRepositories"
 	"github.com/chakornpat-tn/go-rest-api/modules/products/productsUsecases"
 
+	"github.com/chakornpat-tn/go-rest-api/modules/orders/ordersHandlers"
+	"github.com/chakornpat-tn/go-rest-api/modules/orders/ordersRepositories"
+	"github.com/chakornpat-tn/go-rest-api/modules/orders/ordersUsecases"
+
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -29,6 +32,7 @@ type IModuleFactory interface {
 	AppinfoModule()
 	FilesModule()
 	ProductsModule()
+	OrdersModule()
 }
 
 type moduleFactory struct {
@@ -115,4 +119,24 @@ func (m *moduleFactory) ProductsModule() {
 	router.Delete("/:product_id", m.mid.JwtAuth(), m.mid.Authorize(2), handler.DeleteProduct)
 	router.Patch("/:product_id", m.mid.JwtAuth(), m.mid.Authorize(2), handler.UpdateProduct)
 	router.Post("/", m.mid.JwtAuth(), m.mid.Authorize(2), handler.AddProduct)
+}
+
+func (m *moduleFactory) OrdersModule() {
+
+	filesUsecase := filesUsecases.NewFilesUsecase(m.server.cfg)
+	productsRepo := productsRepositories.NewProductsRepository(m.server.cfg, m.server.db, filesUsecase)
+
+	repository := ordersRepositories.NewOrdersRepository(m.server.db)
+	useCase := ordersUsecases.NewOrdersUsecase(repository, productsRepo)
+	handler := ordersHandlers.NewOrdersHandler(m.server.cfg, useCase)
+
+	router := m.router.Group("/orders")
+
+	router.Get("/", m.mid.JwtAuth(), m.mid.Authorize(2), handler.FindOrders)
+	router.Get("/:user_id/:order_id", m.mid.JwtAuth(), m.mid.ParamsCheck(), handler.FindOrder)
+
+	router.Patch("/:user_id/:order_id", m.mid.JwtAuth(), m.mid.ParamsCheck(), handler.UpdateOrder)
+
+	router.Post("/", m.mid.JwtAuth(), handler.InsertOrder)
+
 }
