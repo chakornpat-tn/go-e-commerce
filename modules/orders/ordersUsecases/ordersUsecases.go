@@ -1,6 +1,7 @@
 package ordersUsecases
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/chakornpat-tn/go-rest-api/modules/entities"
@@ -12,6 +13,7 @@ import (
 type IOrdersUsecase interface {
 	FindOrder(orderId string) (*orders.Order, error)
 	FindOrders(req *orders.OrderFilter) *entities.PaginateRes
+	InsertOrder(req *orders.Order) (*orders.Order, error)
 }
 
 type ordersUsecase struct {
@@ -45,4 +47,34 @@ func (u *ordersUsecase) FindOrders(req *orders.OrderFilter) *entities.PaginateRe
 		TotalData: count,
 		TotalPage: int(math.Ceil(float64(count) / float64(req.Limit))),
 	}
+}
+
+func (u *ordersUsecase) InsertOrder(req *orders.Order) (*orders.Order, error) {
+
+	for i := range req.Products {
+		if req.Products[i].Product == nil {
+			return nil, fmt.Errorf("product is nil")
+		}
+
+		prod, err := u.productRepository.FindProductById(req.Products[i].Product.Id)
+		if err != nil {
+			return nil, err
+		}
+
+		req.TotalPaid += req.Products[i].Product.Price * float64(req.Products[i].Qty)
+		req.Products[i].Product = prod
+
+	}
+
+	orderId, err := u.ordersRepository.InsertOrder(req)
+	if err != nil {
+		return nil, err
+	}
+
+	order, err := u.ordersRepository.FindOrder(orderId)
+	if err != nil {
+		return nil, err
+	}
+
+	return order, nil
 }

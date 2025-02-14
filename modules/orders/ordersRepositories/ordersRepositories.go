@@ -12,6 +12,7 @@ import (
 type IOrdersRepository interface {
 	FindOrder(orderId string) (*orders.Order, error)
 	FindOrders(req *orders.OrderFilter) ([]*orders.Order, int)
+	InsertOrder(req *orders.Order) (string, error)
 }
 
 type orderRepository struct {
@@ -74,8 +75,7 @@ FROM
   ) AS "t";`
 
 	orderData := &orders.Order{
-		TransferSlip: &orders.TransferSlip{},
-		Products:     make([]*orders.ProductsOrder, 0),
+		Products: make([]*orders.ProductsOrder, 0),
 	}
 
 	raw := make([]byte, 0)
@@ -95,4 +95,17 @@ func (r *orderRepository) FindOrders(req *orders.OrderFilter) ([]*orders.Order, 
 	builder := ordersPatterns.FindOrderBuilder(r.db, req)
 	engineer := ordersPatterns.FindOrderEngineer(builder)
 	return engineer.FindOrders(), engineer.CountOrders()
+}
+
+func (r *orderRepository) InsertOrder(req *orders.Order) (string, error) {
+	builder := ordersPatterns.InsertOrderBuilder(r.db, req)
+	engineer := ordersPatterns.InsertOrderEngineer(builder)
+
+	orderId, err := engineer.InsertOrder()
+	if err != nil {
+		return "", err
+	}
+
+	return orderId, nil
+
 }
