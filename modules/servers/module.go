@@ -1,7 +1,6 @@
 package servers
 
 import (
-	"github.com/chakornpat-tn/go-rest-api/modules/files/filesHandlers"
 	"github.com/chakornpat-tn/go-rest-api/modules/files/filesUsecases"
 	"github.com/chakornpat-tn/go-rest-api/modules/middlewares/middlewaresHandlers"
 	"github.com/chakornpat-tn/go-rest-api/modules/middlewares/middlewaresRepositories"
@@ -15,9 +14,7 @@ import (
 	"github.com/chakornpat-tn/go-rest-api/modules/appinfo/appinfoRepositories"
 	"github.com/chakornpat-tn/go-rest-api/modules/appinfo/appinfoUsecases"
 
-	"github.com/chakornpat-tn/go-rest-api/modules/products/productsHandlers"
 	"github.com/chakornpat-tn/go-rest-api/modules/products/productsRepositories"
-	"github.com/chakornpat-tn/go-rest-api/modules/products/productsUsecases"
 
 	"github.com/chakornpat-tn/go-rest-api/modules/orders/ordersHandlers"
 	"github.com/chakornpat-tn/go-rest-api/modules/orders/ordersRepositories"
@@ -30,8 +27,8 @@ type IModuleFactory interface {
 	MonitorModule()
 	UsersModule()
 	AppinfoModule()
-	FilesModule()
-	ProductsModule()
+	FilesModule() IFileModule
+	ProductsModule() IProductModule
 	OrdersModule()
 }
 
@@ -91,34 +88,6 @@ func (m *moduleFactory) AppinfoModule() {
 	router.Get("/categories", m.mid.ApiKeyAuth(), handler.FindCategory)
 	router.Delete("/categories", m.mid.ApiKeyAuth(), handler.FindCategory)
 
-}
-
-func (m *moduleFactory) FilesModule() {
-	handler := filesHandlers.NewFilesHandler(
-		m.server.cfg,
-		filesUsecases.NewFilesUsecase(m.server.cfg),
-	)
-
-	router := m.router.Group("/files")
-
-	router.Post("/upload", m.mid.JwtAuth(), m.mid.Authorize(2), handler.UploadFiles)
-	router.Delete("/delete", m.mid.JwtAuth(), m.mid.Authorize(2), handler.DeleteFiles)
-}
-
-func (m *moduleFactory) ProductsModule() {
-	filesUsecase := filesUsecases.NewFilesUsecase(m.server.cfg)
-
-	repository := productsRepositories.NewProductsRepository(m.server.cfg, m.server.db, filesUsecase)
-	useCase := productsUsecases.NewProductsUsecase(repository)
-	handler := productsHandlers.NewProductsHandler(m.server.cfg, useCase, filesUsecase)
-
-	router := m.router.Group("/products")
-
-	router.Get("/", m.mid.ApiKeyAuth(), handler.FindProducts)
-	router.Get("/:product_id", m.mid.ApiKeyAuth(), handler.FindProductById)
-	router.Delete("/:product_id", m.mid.JwtAuth(), m.mid.Authorize(2), handler.DeleteProduct)
-	router.Patch("/:product_id", m.mid.JwtAuth(), m.mid.Authorize(2), handler.UpdateProduct)
-	router.Post("/", m.mid.JwtAuth(), m.mid.Authorize(2), handler.AddProduct)
 }
 
 func (m *moduleFactory) OrdersModule() {
