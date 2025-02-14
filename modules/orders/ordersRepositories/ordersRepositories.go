@@ -1,8 +1,10 @@
 package ordersRepositories
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/chakornpat-tn/go-rest-api/modules/orders"
 	"github.com/chakornpat-tn/go-rest-api/modules/orders/ordersPatterns"
@@ -13,6 +15,7 @@ type IOrdersRepository interface {
 	FindOrder(orderId string) (*orders.Order, error)
 	FindOrders(req *orders.OrderFilter) ([]*orders.Order, int)
 	InsertOrder(req *orders.Order) (string, error)
+	UpdateOrder(req *orders.Order) error
 }
 
 type orderRepository struct {
@@ -108,4 +111,45 @@ func (r *orderRepository) InsertOrder(req *orders.Order) (string, error) {
 
 	return orderId, nil
 
+}
+
+func (r *orderRepository) UpdateOrder(req *orders.Order) error {
+	query := `
+  UPDATE "orders" SET`
+
+	queryWhereStack := make([]string, 0)
+	values := make([]any, 0)
+	lastIdx := 1
+
+	if req.Status != "" {
+		queryWhereStack = append(queryWhereStack, fmt.Sprintf("\"status\" = $%d?", lastIdx))
+		values = append(values, req.Status)
+		lastIdx++
+	}
+
+	if req.TransferSlip != nil {
+		queryWhereStack = append(queryWhereStack, fmt.Sprintf("\"transfer_slip\" = $%d?", lastIdx))
+		values = append(values, req.TransferSlip)
+		lastIdx++
+	}
+
+	values = append(values, req.Id)
+
+	queryClose := fmt.Sprintf(`
+  WHERE id = $%d;`, lastIdx)
+
+	for i := range queryWhereStack {
+		if i != len(queryWhereStack)-1 {
+			query += strings.Replace(queryWhereStack[i], "?", ",", 1)
+		} else {
+			query += strings.Replace(queryWhereStack[i], "?", "", 1)
+		}
+	}
+
+	query += queryClose
+	if _, err := r.db.ExecContext(context.Background(), query, values...); err != nil {
+		return err
+	}
+
+	return nil
 }
