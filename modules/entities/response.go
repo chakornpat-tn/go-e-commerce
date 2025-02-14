@@ -33,7 +33,7 @@ func NewResponse(c *fiber.Ctx) IResponse {
 func (r *Response) Success(code int, data any) IResponse {
 	r.StatusCode = code
 	r.Data = data
-	logger.InitLogger(r.Context, &r.Data).Print().Save()
+	logger.InitLogger(r.Context, &r.Data).Print()
 	return r
 }
 func (r *Response) Error(code int, tractId, msg string) IResponse {
@@ -43,7 +43,7 @@ func (r *Response) Error(code int, tractId, msg string) IResponse {
 		TraceId: tractId,
 		Msg:     msg,
 	}
-	logger.InitLogger(r.Context, &r.ErrorRes).Print().Save()
+	logger.InitLogger(r.Context, &r.ErrorRes).Print()
 	return r
 }
 func (r *Response) Res() error {
@@ -51,4 +51,12 @@ func (r *Response) Res() error {
 		return r.Context.Status(r.StatusCode).JSON(r.ErrorRes)
 	}
 	return r.Context.Status(fiber.StatusOK).JSON(r.Data)
+}
+
+type PaginateRes struct {
+	Data      any `json:"data"`
+	Page      int `json:"page"`
+	Limit     int `json:"limit"`
+	TotalPage int `json:"total_page"`
+	TotalData int `json:"total_data"`
 }
