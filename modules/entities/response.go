@@ -33,7 +33,7 @@ func NewResponse(c *fiber.Ctx) IResponse {
 func (r *Response) Success(code int, data any) IResponse {
 	r.StatusCode = code
 	r.Data = data
-	logger.InitLogger(r.Context, &r.Data).Print().Save()
+	logger.InitLogger(r.Context, &r.Data).Print()
 	return r
 }
 func (r *Response) Error(code int, tractId, msg string) IResponse {
@@ -43,7 +43,7 @@ func (r *Response) Error(code int, tractId, msg string) IResponse {
 		TraceId: tractId,
 		Msg:     msg,
 	}
-	logger.InitLogger(r.Context, &r.ErrorRes).Print().Save()
+	logger.InitLogger(r.Context, &r.ErrorRes).Print()
 	return r
 }
 func (r *Response) Res() error {
